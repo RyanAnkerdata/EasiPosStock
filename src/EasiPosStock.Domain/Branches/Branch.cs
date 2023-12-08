@@ -7,6 +7,9 @@ using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 using JetBrains.Annotations;
 
+using EasiPosStock.CostCentres;
+using EasiPosStock.Products;
+
 using Volo.Abp;
 
 namespace EasiPosStock.Branches
@@ -17,6 +20,9 @@ namespace EasiPosStock.Branches
 
         [NotNull]
         public virtual string BranchName { get; set; }
+
+        public ICollection<CostCentre> CostCentres { get; private set; }
+        public ICollection<Product> Products { get; private set; }
 
         protected BranchBase()
         {
@@ -29,6 +35,8 @@ namespace EasiPosStock.Branches
             Id = id;
             Check.NotNull(branchName, nameof(branchName));
             BranchName = branchName;
+            CostCentres = new Collection<CostCentre>();
+            Products = new Collection<Product>();
         }
 
     }

@@ -85,6 +85,64 @@ namespace EasiPosStock.Migrations
                     b.ToTable("AppBranches", (string)null);
                 });
 
+            modelBuilder.Entity("EasiPosStock.CostCentres.CostCentre", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CostCentreName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CostCentreName");
+
+                    b.Property<string>("CostCentreReference")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CostCentreReference");
+
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit")
+                        .HasColumnName("IsDisabled");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.ToTable("AppCostCentres", (string)null);
+                });
+
+            modelBuilder.Entity("EasiPosStock.Products.Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ProductCode");
+
+                    b.Property<string>("ProductName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ProductName");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.ToTable("AppProducts", (string)null);
+                });
+
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2401,6 +2459,24 @@ namespace EasiPosStock.Migrations
                     b.ToTable("SaasTenantConnectionStrings", (string)null);
                 });
 
+            modelBuilder.Entity("EasiPosStock.CostCentres.CostCentre", b =>
+                {
+                    b.HasOne("EasiPosStock.Branches.Branch", null)
+                        .WithMany("CostCentres")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EasiPosStock.Products.Product", b =>
+                {
+                    b.HasOne("EasiPosStock.Branches.Branch", null)
+                        .WithMany("Products")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>
                 {
                     b.HasOne("Volo.Abp.AuditLogging.AuditLog", null)
@@ -2568,6 +2644,13 @@ namespace EasiPosStock.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("EasiPosStock.Branches.Branch", b =>
+                {
+                    b.Navigation("CostCentres");
+
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>

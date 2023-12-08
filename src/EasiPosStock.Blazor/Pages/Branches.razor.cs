@@ -11,6 +11,8 @@ using Volo.Abp.AspNetCore.Components.Web.Theming.PageToolbars;
 using EasiPosStock.Branches;
 using EasiPosStock.Permissions;
 using EasiPosStock.Shared;
+using EasiPosStock.CostCentres; 
+using EasiPosStock.Products; 
 
 
 namespace EasiPosStock.Blazor.Pages
@@ -42,7 +44,48 @@ namespace EasiPosStock.Blazor.Pages
         private BranchDto? SelectedBranch;
         
         
+                #region Child Entities
         
+                #region CostCentres
+
+                private bool CanListCostCentre { get; set; }
+                private bool CanCreateCostCentre { get; set; }
+                private bool CanEditCostCentre { get; set; }
+                private bool CanDeleteCostCentre { get; set; }
+                private CostCentreCreateDto NewCostCentre { get; set; }
+                private Dictionary<Guid, DataGrid<CostCentreDto>> CostCentreDataGrids { get; set; } = new();
+                private int CostCentrePageSize { get; } = 5;
+                private DataGridEntityActionsColumn<CostCentreDto> CostCentreEntityActionsColumns { get; set; } = new();
+                private Validations NewCostCentreValidations { get; set; } = new();
+                private Modal CreateCostCentreModal { get; set; } = new();
+                private Guid EditingCostCentreId { get; set; }
+                private CostCentreUpdateDto EditingCostCentre { get; set; }
+                private Validations EditingCostCentreValidations { get; set; } = new();
+                private Modal EditCostCentreModal { get; set; } = new();
+    
+            
+                #endregion
+        #region Products
+
+                private bool CanListProduct { get; set; }
+                private bool CanCreateProduct { get; set; }
+                private bool CanEditProduct { get; set; }
+                private bool CanDeleteProduct { get; set; }
+                private ProductCreateDto NewProduct { get; set; }
+                private Dictionary<Guid, DataGrid<ProductDto>> ProductDataGrids { get; set; } = new();
+                private int ProductPageSize { get; } = 5;
+                private DataGridEntityActionsColumn<ProductDto> ProductEntityActionsColumns { get; set; } = new();
+                private Validations NewProductValidations { get; set; } = new();
+                private Modal CreateProductModal { get; set; } = new();
+                private Guid EditingProductId { get; set; }
+                private ProductUpdateDto EditingProduct { get; set; }
+                private Validations EditingProductValidations { get; set; } = new();
+                private Modal EditProductModal { get; set; } = new();
+    
+            
+                #endregion
+        
+        #endregion
         
         public Branches()
         {
@@ -56,7 +99,10 @@ namespace EasiPosStock.Blazor.Pages
             };
             BranchList = new List<BranchDto>();
             
-            
+            NewCostCentre = new CostCentreCreateDto();
+EditingCostCentre = new CostCentreUpdateDto();
+NewProduct = new ProductCreateDto();
+EditingProduct = new ProductUpdateDto();
         }
 
         protected override async Task OnInitializedAsync()
@@ -94,7 +140,28 @@ namespace EasiPosStock.Blazor.Pages
             CanDeleteBranch = await AuthorizationService
                             .IsGrantedAsync(EasiPosStockPermissions.Branches.Delete);
                             
-                            
+            
+            #region CostCentres
+            CanListCostCentre = await AuthorizationService
+                .IsGrantedAsync(EasiPosStockPermissions.CostCentres.Default);
+            CanCreateCostCentre = await AuthorizationService
+                .IsGrantedAsync(EasiPosStockPermissions.CostCentres.Create);
+            CanEditCostCentre = await AuthorizationService
+                .IsGrantedAsync(EasiPosStockPermissions.CostCentres.Edit);
+            CanDeleteCostCentre = await AuthorizationService
+                .IsGrantedAsync(EasiPosStockPermissions.CostCentres.Delete);
+            #endregion
+
+            #region Products
+            CanListProduct = await AuthorizationService
+                .IsGrantedAsync(EasiPosStockPermissions.Products.Default);
+            CanCreateProduct = await AuthorizationService
+                .IsGrantedAsync(EasiPosStockPermissions.Products.Create);
+            CanEditProduct = await AuthorizationService
+                .IsGrantedAsync(EasiPosStockPermissions.Products.Edit);
+            CanDeleteProduct = await AuthorizationService
+                .IsGrantedAsync(EasiPosStockPermissions.Products.Delete);
+            #endregion                
         }
 
         private async Task GetBranchesAsync()
@@ -230,8 +297,257 @@ namespace EasiPosStock.Blazor.Pages
         
 
 
+    private bool ShouldShowDetailRow()
+    {
+        return CanListCostCentre ||CanListProduct;
+    }
+    
+    public string SelectedChildTab { get; set; } = "costcentre-tab";
+        
+    private Task OnSelectedChildTabChanged(string name)
+    {
+        SelectedChildTab = name;
+    
+        return Task.CompletedTask;
+    }
 
 
+        #region CostCentres
+        
+        private async Task OnCostCentreDataGridReadAsync(DataGridReadDataEventArgs<CostCentreDto> e, Guid branchId)
+        {
+            var sorting = e.Columns
+                .Where(c => c.SortDirection != SortDirection.Default)
+                .Select(c => c.Field + (c.SortDirection == SortDirection.Descending ? " DESC" : ""))
+                .JoinAsString(",");
 
+            var currentPage = e.Page;
+            await SetCostCentresAsync(branchId, currentPage, sorting: sorting);
+            await InvokeAsync(StateHasChanged);
+        }
+        
+        private async Task SetCostCentresAsync(Guid branchId, int currentPage = 1, string? sorting = null)
+        {
+            var branch = BranchList.FirstOrDefault(x => x.Id == branchId);
+            if(branch == null)
+            {
+                return;
+            }
+
+            var costCentres = await CostCentresAppService.GetListByBranchIdAsync(new GetCostCentreListInput 
+            {
+                BranchId = branchId,
+                MaxResultCount = CostCentrePageSize,
+                SkipCount = (currentPage - 1) * CostCentrePageSize,
+                Sorting = sorting
+            });
+
+            branch.CostCentres = costCentres.Items.ToList();
+
+            var costCentreDataGrid = CostCentreDataGrids[branchId];
+            
+            costCentreDataGrid.CurrentPage = currentPage;
+            costCentreDataGrid.TotalItems = (int)costCentres.TotalCount;
+        }
+        
+        private async Task OpenEditCostCentreModalAsync(CostCentreDto input)
+        {
+            var costCentre = await CostCentresAppService.GetAsync(input.Id);
+
+            EditingCostCentreId = costCentre.Id;
+            EditingCostCentre = ObjectMapper.Map<CostCentreDto, CostCentreUpdateDto>(costCentre);
+            await EditingCostCentreValidations.ClearAll();
+            await EditCostCentreModal.Show();
+        }
+        
+        private async Task CloseEditCostCentreModalAsync()
+        {
+            await EditCostCentreModal.Hide();
+        }
+        
+        private async Task UpdateCostCentreAsync()
+        {
+            try
+            {
+                if (await EditingCostCentreValidations.ValidateAll() == false)
+                {
+                    return;
+                }
+
+                await CostCentresAppService.UpdateAsync(EditingCostCentreId, EditingCostCentre);
+                await SetCostCentresAsync(EditingCostCentre.BranchId);
+                await EditCostCentreModal.Hide();
+            }
+            catch (Exception ex)
+            {
+                await HandleErrorAsync(ex);
+            }
+        }
+        
+        private async Task DeleteCostCentreAsync(CostCentreDto input)
+        {
+            await CostCentresAppService.DeleteAsync(input.Id);
+            await SetCostCentresAsync(input.BranchId);
+        }
+        
+        private async Task OpenCreateCostCentreModalAsync(Guid branchId)
+        {
+            NewCostCentre = new CostCentreCreateDto
+            {
+                BranchId = branchId
+            };
+
+            await NewCostCentreValidations.ClearAll();
+            await CreateCostCentreModal.Show();
+        }
+        
+        private async Task CloseCreateCostCentreModalAsync()
+        {
+            NewCostCentre = new CostCentreCreateDto();
+
+            await CreateCostCentreModal.Hide();
+        }
+        
+        private async Task CreateCostCentreAsync()
+        {
+            try
+            {
+                if (await NewCostCentreValidations.ValidateAll() == false)
+                {
+                    return;
+                }
+
+                await CostCentresAppService.CreateAsync(NewCostCentre);
+                await SetCostCentresAsync(NewCostCentre.BranchId);
+                await CloseCreateCostCentreModalAsync();
+            }
+            catch (Exception ex)
+            {
+                await HandleErrorAsync(ex);
+            }
+        }
+        
+        
+        
+        #endregion
+
+        #region Products
+        
+        private async Task OnProductDataGridReadAsync(DataGridReadDataEventArgs<ProductDto> e, Guid branchId)
+        {
+            var sorting = e.Columns
+                .Where(c => c.SortDirection != SortDirection.Default)
+                .Select(c => c.Field + (c.SortDirection == SortDirection.Descending ? " DESC" : ""))
+                .JoinAsString(",");
+
+            var currentPage = e.Page;
+            await SetProductsAsync(branchId, currentPage, sorting: sorting);
+            await InvokeAsync(StateHasChanged);
+        }
+        
+        private async Task SetProductsAsync(Guid branchId, int currentPage = 1, string? sorting = null)
+        {
+            var branch = BranchList.FirstOrDefault(x => x.Id == branchId);
+            if(branch == null)
+            {
+                return;
+            }
+
+            var products = await ProductsAppService.GetListByBranchIdAsync(new GetProductListInput 
+            {
+                BranchId = branchId,
+                MaxResultCount = ProductPageSize,
+                SkipCount = (currentPage - 1) * ProductPageSize,
+                Sorting = sorting
+            });
+
+            branch.Products = products.Items.ToList();
+
+            var productDataGrid = ProductDataGrids[branchId];
+            
+            productDataGrid.CurrentPage = currentPage;
+            productDataGrid.TotalItems = (int)products.TotalCount;
+        }
+        
+        private async Task OpenEditProductModalAsync(ProductDto input)
+        {
+            var product = await ProductsAppService.GetAsync(input.Id);
+
+            EditingProductId = product.Id;
+            EditingProduct = ObjectMapper.Map<ProductDto, ProductUpdateDto>(product);
+            await EditingProductValidations.ClearAll();
+            await EditProductModal.Show();
+        }
+        
+        private async Task CloseEditProductModalAsync()
+        {
+            await EditProductModal.Hide();
+        }
+        
+        private async Task UpdateProductAsync()
+        {
+            try
+            {
+                if (await EditingProductValidations.ValidateAll() == false)
+                {
+                    return;
+                }
+
+                await ProductsAppService.UpdateAsync(EditingProductId, EditingProduct);
+                await SetProductsAsync(EditingProduct.BranchId);
+                await EditProductModal.Hide();
+            }
+            catch (Exception ex)
+            {
+                await HandleErrorAsync(ex);
+            }
+        }
+        
+        private async Task DeleteProductAsync(ProductDto input)
+        {
+            await ProductsAppService.DeleteAsync(input.Id);
+            await SetProductsAsync(input.BranchId);
+        }
+        
+        private async Task OpenCreateProductModalAsync(Guid branchId)
+        {
+            NewProduct = new ProductCreateDto
+            {
+                BranchId = branchId
+            };
+
+            await NewProductValidations.ClearAll();
+            await CreateProductModal.Show();
+        }
+        
+        private async Task CloseCreateProductModalAsync()
+        {
+            NewProduct = new ProductCreateDto();
+
+            await CreateProductModal.Hide();
+        }
+        
+        private async Task CreateProductAsync()
+        {
+            try
+            {
+                if (await NewProductValidations.ValidateAll() == false)
+                {
+                    return;
+                }
+
+                await ProductsAppService.CreateAsync(NewProduct);
+                await SetProductsAsync(NewProduct.BranchId);
+                await CloseCreateProductModalAsync();
+            }
+            catch (Exception ex)
+            {
+                await HandleErrorAsync(ex);
+            }
+        }
+        
+        
+        
+        #endregion
     }
 }

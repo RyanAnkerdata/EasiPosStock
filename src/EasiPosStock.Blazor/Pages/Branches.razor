@@ -17,6 +17,8 @@
 @using Volo.Abp.ObjectMapping
 @using Volo.Abp.AspNetCore.Components.Messages
 @using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using EasiPosStock.CostCentres 
+@using EasiPosStock.Products 
 
 @using EasiPosStock.Permissions
 @using Microsoft.AspNetCore.Components
@@ -24,6 +26,8 @@
 @using Volo.Abp.Http.Client
 @inherits EasiPosStockComponentBase
 @inject IBranchesAppService BranchesAppService
+@inject ICostCentresAppService CostCentresAppService
+@inject IProductsAppService ProductsAppService
 
 @inject IUiMessageService UiMessageService
 @inject IRemoteServiceConfigurationProvider RemoteServiceConfigurationProvider
@@ -83,9 +87,9 @@
     <CardBody>
         <DataGrid TItem="BranchDto"
                   Data="BranchList"
-                  
-                  
-                  
+                  DetailRowTrigger="@((x) => { x.Single = true; return ShouldShowDetailRow(); })"
+                  DetailRowStartsVisible="false"
+                  RowClicked="@((e) => { if (e.Item.Id == SelectedBranch?.Id) { SelectedBranch = null; } else { SelectedBranch = e.Item; } })"
                   ReadData="OnDataGridReadAsync"
                   TotalItems="TotalCount"
                   ShowPager="true"
@@ -93,7 +97,23 @@
                   PageSize="PageSize"
                   Class="datagrid-detail">
             <DataGridColumns>
-                
+                @if (ShouldShowDetailRow())
+                {
+                    <DataGridColumn TItem="BranchDto"
+                                    Field="Id"
+                                    Width="0.5rem">
+                        <DisplayTemplate>
+                            @if (context.Id == SelectedBranch?.Id)
+                            {
+                                <i class="fas fa-chevron-up"/>
+                            }
+                            else
+                            {
+                                <i class="fas fa-chevron-down"/>
+                            }
+                        </DisplayTemplate>
+                    </DataGridColumn>
+                }
                 <DataGridEntityActionsColumn TItem="BranchDto" @ref="@EntityActionsColumn">
                     <DisplayTemplate>
                         <EntityActions TItem="BranchDto" EntityActionsColumn="@EntityActionsColumn">
@@ -119,7 +139,159 @@
 
             </DataGridColumns>
             
+            <DetailRowTemplate>
+    <div class="bg-light rounded p-3 pb-0 pt-1">
+        <Tabs SelectedTab="@SelectedChildTab" SelectedTabChanged="@OnSelectedChildTabChanged">
+            <Items>
+                <Tab Name="costcentre-tab">@L["CostCentres"]</Tab>
+<Tab Name="product-tab">@L["Products"]</Tab>
+            </Items>
             
+            <Content>
+                                        <TabPanel Name="costcentre-tab" Class="mt-0">
+                            @if (CanCreateCostCentre)
+                            {
+                                <Row Class="mb-2">
+                                    <Column Class="d-flex justify-content-end">
+                                        <Button Color="Color.Primary" Clicked="async () => await OpenCreateCostCentreModalAsync(context.Id)">
+                                            <i class="fas fa-plus me-1"></i>@L["NewCostCentre"]
+                                        </Button>
+                                    </Column>
+                                </Row>
+                            }
+
+                            @{
+                                var costCentres = (context as BranchDto).CostCentres;
+
+                                <DataGrid @ref="@CostCentreDataGrids[context.Id]"
+                                          TItem="CostCentreDto"
+                                          Data="costCentres"
+                                          ReadData="@((args) => OnCostCentreDataGridReadAsync(args, context.Id))"
+                                          Sortable="true"
+                                          ShowCaptions="true"
+                                          ShowPager="true"
+                                          Responsive="true"
+                                          PageSize="CostCentrePageSize">
+
+                                    <DataGridColumns>
+
+                                        <DataGridEntityActionsColumn TItem="CostCentreDto" @ref="@CostCentreEntityActionsColumns">
+                                            <DisplayTemplate Context="cost_centre_context">
+                                                <EntityActions TItem="CostCentreDto" EntityActionsColumn="@CostCentreEntityActionsColumns">
+                                                    <EntityAction TItem="CostCentreDto"
+                                                                  Visible="@CanEditCostCentre"
+                                                                  Clicked="async () => await OpenEditCostCentreModalAsync(cost_centre_context)"
+                                                                  Text="@L["Edit"]">
+                                                    </EntityAction>
+                                                    <EntityAction TItem="CostCentreDto"
+                                                                  Visible="@CanDeleteCostCentre"
+                                                                  Clicked="async () => await DeleteCostCentreAsync(cost_centre_context)"
+                                                                  ConfirmationMessage="@(() => L["DeleteConfirmationMessage"])"
+                                                                  Text="@L["Delete"]">
+                                                    </EntityAction>
+                                                </EntityActions>
+                                            </DisplayTemplate>
+                                        </DataGridEntityActionsColumn>
+
+                                        <DataGridCommandColumn/>
+
+                                        
+              <DataGridColumn TItem="CostCentreDto"
+                      Field="CostCentreReference"
+                      Caption="@L["CostCentreReference"]">
+              </DataGridColumn>
+
+              <DataGridColumn TItem="CostCentreDto"
+                      Field="CostCentreName"
+                      Caption="@L["CostCentreName"]">
+              </DataGridColumn>
+
+              <DataGridColumn TItem="CostCentreDto"
+                      Field="IsDisabled"
+                      Caption="@L["IsDisabled"]">
+                    <DisplayTemplate Context="idContext">
+                        @if (idContext.IsDisabled)
+                        {
+                            <Icon TextColor="TextColor.Success" Name="@IconName.Check" />
+                        }
+                        else
+                        {
+                            <Icon TextColor="TextColor.Danger" Name="@IconName.Times" />
+                        }
+                    </DisplayTemplate>
+              </DataGridColumn>
+
+
+                                    </DataGridColumns>
+                                </DataGrid>
+                            }
+                        </TabPanel>
+                        <TabPanel Name="product-tab" Class="mt-0">
+                            @if (CanCreateProduct)
+                            {
+                                <Row Class="mb-2">
+                                    <Column Class="d-flex justify-content-end">
+                                        <Button Color="Color.Primary" Clicked="async () => await OpenCreateProductModalAsync(context.Id)">
+                                            <i class="fas fa-plus me-1"></i>@L["NewProduct"]
+                                        </Button>
+                                    </Column>
+                                </Row>
+                            }
+
+                            @{
+                                var products = (context as BranchDto).Products;
+
+                                <DataGrid @ref="@ProductDataGrids[context.Id]"
+                                          TItem="ProductDto"
+                                          Data="products"
+                                          ReadData="@((args) => OnProductDataGridReadAsync(args, context.Id))"
+                                          Sortable="true"
+                                          ShowCaptions="true"
+                                          ShowPager="true"
+                                          Responsive="true"
+                                          PageSize="ProductPageSize">
+
+                                    <DataGridColumns>
+
+                                        <DataGridEntityActionsColumn TItem="ProductDto" @ref="@ProductEntityActionsColumns">
+                                            <DisplayTemplate Context="product_context">
+                                                <EntityActions TItem="ProductDto" EntityActionsColumn="@ProductEntityActionsColumns">
+                                                    <EntityAction TItem="ProductDto"
+                                                                  Visible="@CanEditProduct"
+                                                                  Clicked="async () => await OpenEditProductModalAsync(product_context)"
+                                                                  Text="@L["Edit"]">
+                                                    </EntityAction>
+                                                    <EntityAction TItem="ProductDto"
+                                                                  Visible="@CanDeleteProduct"
+                                                                  Clicked="async () => await DeleteProductAsync(product_context)"
+                                                                  ConfirmationMessage="@(() => L["DeleteConfirmationMessage"])"
+                                                                  Text="@L["Delete"]">
+                                                    </EntityAction>
+                                                </EntityActions>
+                                            </DisplayTemplate>
+                                        </DataGridEntityActionsColumn>
+
+                                        <DataGridCommandColumn/>
+
+                                        
+              <DataGridColumn TItem="ProductDto"
+                      Field="ProductName"
+                      Caption="@L["ProductName"]">
+              </DataGridColumn>
+
+              <DataGridColumn TItem="ProductDto"
+                      Field="ProductCode"
+                      Caption="@L["ProductCode"]">
+              </DataGridColumn>
+
+                                    </DataGridColumns>
+                                </DataGrid>
+                            }
+                        </TabPanel>
+            </Content>
+        </Tabs>
+    </div>
+</DetailRowTemplate>
         </DataGrid>
     </CardBody>
 </Card>
@@ -220,3 +392,221 @@
     </ModalContent>
 </Modal>
 
+@* ************************* CostCentre: CREATE MODAL ************************* *@
+<Modal @ref="CreateCostCentreModal" Closing="@CreateCostCentreModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="CreateCostCentreForm">
+            <ModalHeader>
+                <ModalTitle>@L["NewCostCentre"]</ModalTitle>
+                <CloseButton Clicked="CloseCreateCostCentreModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@NewCostCentreValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@NewCostCentre"
+                             ValidateOnLoad="false">
+                     
+                    
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["CostCentreReference"]</FieldLabel>
+                            <TextEdit @bind-Text="@NewCostCentre.CostCentreReference"  >
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["CostCentreName"]</FieldLabel>
+                            <TextEdit @bind-Text="@NewCostCentre.CostCentreName"  >
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+
+                    <Field>
+                        <Check TValue="bool" @bind-Checked="@NewCostCentre.IsDisabled" >@L["IsDisabled"]</Check>
+                    </Field>
+
+                    
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseCreateCostCentreModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="CreateCostCentreForm" Clicked="CreateCostCentreAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@* ************************* CostCentre: EDIT MODAL ************************* *@
+<Modal @ref="EditCostCentreModal" Closing="@EditCostCentreModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="EditCostCentreForm">
+            <ModalHeader>
+                <ModalTitle>@L["Update"]</ModalTitle>
+                <CloseButton Clicked="CloseEditCostCentreModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@EditingCostCentreValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@EditingCostCentre"
+                             ValidateOnLoad="false">
+                     
+                    
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["CostCentreReference"]</FieldLabel>
+                            <TextEdit @bind-Text="@EditingCostCentre.CostCentreReference"  >
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["CostCentreName"]</FieldLabel>
+                            <TextEdit @bind-Text="@EditingCostCentre.CostCentreName"  >
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+
+                    <Field>
+                        <Check TValue="bool" @bind-Checked="@EditingCostCentre.IsDisabled" >@L["IsDisabled"]</Check>
+                    </Field>
+
+                    
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseEditCostCentreModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="EditCostCentreForm" Clicked="UpdateCostCentreAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+@* ************************* Product: CREATE MODAL ************************* *@
+<Modal @ref="CreateProductModal" Closing="@CreateProductModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="CreateProductForm">
+            <ModalHeader>
+                <ModalTitle>@L["NewProduct"]</ModalTitle>
+                <CloseButton Clicked="CloseCreateProductModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@NewProductValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@NewProduct"
+                             ValidateOnLoad="false">
+                     
+                    
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["ProductName"]</FieldLabel>
+                            <TextEdit @bind-Text="@NewProduct.ProductName"  >
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["ProductCode"]</FieldLabel>
+                            <TextEdit @bind-Text="@NewProduct.ProductCode"  >
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+
+                    
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseCreateProductModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="CreateProductForm" Clicked="CreateProductAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@* ************************* Product: EDIT MODAL ************************* *@
+<Modal @ref="EditProductModal" Closing="@EditProductModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="EditProductForm">
+            <ModalHeader>
+                <ModalTitle>@L["Update"]</ModalTitle>
+                <CloseButton Clicked="CloseEditProductModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@EditingProductValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@EditingProduct"
+                             ValidateOnLoad="false">
+                     
+                    
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["ProductName"]</FieldLabel>
+                            <TextEdit @bind-Text="@EditingProduct.ProductName"  >
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["ProductCode"]</FieldLabel>
+                            <TextEdit @bind-Text="@EditingProduct.ProductCode"  >
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+
+                    
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseEditProductModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="EditProductForm" Clicked="UpdateProductAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>

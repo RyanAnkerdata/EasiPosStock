@@ -1,3 +1,5 @@
+using EasiPosStock.Products;
+using EasiPosStock.CostCentres;
 using EasiPosStock.Branches;
 using System;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +53,10 @@ public class EasiPosStockEntityFrameworkCoreModule : AbpModule
              * default repositories only for aggregate roots */
             options.AddDefaultRepositories(includeAllEntities: true);
             options.AddRepository<Branch, Branches.EfCoreBranchRepository>();
+
+            options.AddRepository<CostCentre, CostCentres.EfCoreCostCentreRepository>();
+
+            options.AddRepository<Product, Products.EfCoreProductRepository>();
 
         });
 

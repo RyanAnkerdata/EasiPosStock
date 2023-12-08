@@ -53,6 +53,17 @@
     "ItemAlreadyAdded": "This item is already added.",
     "ExportToExcel": "Export to Excel",
     "Menu:Branches": "Branches",
-    "Menu:EasiPosStock": "Easi Pos Stock"
+    "Menu:EasiPosStock": "Easi Pos Stock",
+    "CostCentreReference": "Cost Centre Reference",
+    "CostCentreName": "Cost Centre Name",
+    "IsDisabled": "Is Disabled",
+    "CostCentres": "Cost Centres",
+    "NewCostCentre": "New Cost Centre",
+    "Permission:CostCentres": "Cost Centres",
+    "Permission:Products": "Products",
+    "ProductName": "Product Name",
+    "ProductCode": "Product Code",
+    "Products": "Products",
+    "NewProduct": "New Product"
   }
 }

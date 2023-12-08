@@ -1,3 +1,5 @@
+using EasiPosStock.Products;
+using EasiPosStock.CostCentres;
 using Volo.Abp.AutoMapper;
 using EasiPosStock.Branches;
 using AutoMapper;
@@ -11,5 +13,9 @@ public class EasiPosStockBlazorAutoMapperProfile : Profile
         //Define your AutoMapper configuration here for the Blazor project.
 
         CreateMap<BranchDto, BranchUpdateDto>();
+
+        CreateMap<CostCentreDto, CostCentreUpdateDto>();
+
+        CreateMap<ProductDto, ProductUpdateDto>();
     }
 }

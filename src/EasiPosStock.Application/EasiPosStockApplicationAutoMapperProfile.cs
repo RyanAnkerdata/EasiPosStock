@@ -1,3 +1,5 @@
+using EasiPosStock.Products;
+using EasiPosStock.CostCentres;
 using System;
 using EasiPosStock.Shared;
 using Volo.Abp.AutoMapper;
@@ -16,5 +18,9 @@ public class EasiPosStockApplicationAutoMapperProfile : Profile
 
         CreateMap<Branch, BranchDto>();
         CreateMap<Branch, BranchExcelDto>();
+
+        CreateMap<CostCentre, CostCentreDto>();
+
+        CreateMap<Product, ProductDto>();
     }
 }
