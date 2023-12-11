@@ -128,6 +128,15 @@ public class EasiPosStockMenuContributor : IMenuContributor
                 icon: "fa fa-file-alt",
                 requiredPermissionName: EasiPosStockPermissions.Branches.Default)
         );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                EasiPosStockMenus.Products,
+                l["Menu:Products"],
+                url: "/products",
+                icon: "fa fa-<none>",
+                requiredPermissionName: EasiPosStockPermissions.Products.Default)
+        );
         return Task.CompletedTask;
     }
 

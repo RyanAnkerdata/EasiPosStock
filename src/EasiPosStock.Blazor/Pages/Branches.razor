@@ -18,7 +18,6 @@
 @using Volo.Abp.AspNetCore.Components.Messages
 @using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
 @using EasiPosStock.CostCentres 
-@using EasiPosStock.Products 
 
 @using EasiPosStock.Permissions
 @using Microsoft.AspNetCore.Components
@@ -27,7 +26,6 @@
 @inherits EasiPosStockComponentBase
 @inject IBranchesAppService BranchesAppService
 @inject ICostCentresAppService CostCentresAppService
-@inject IProductsAppService ProductsAppService
 
 @inject IUiMessageService UiMessageService
 @inject IRemoteServiceConfigurationProvider RemoteServiceConfigurationProvider
@@ -144,7 +142,6 @@
         <Tabs SelectedTab="@SelectedChildTab" SelectedTabChanged="@OnSelectedChildTabChanged">
             <Items>
                 <Tab Name="costcentre-tab">@L["CostCentres"]</Tab>
-<Tab Name="product-tab">@L["Products"]</Tab>
             </Items>
             
             <Content>
@@ -206,11 +203,11 @@
                       Caption="@L["CostCentreName"]">
               </DataGridColumn>
 
-              <DataGridColumn TItem="CostCentreDto"
+              <DataGridColumn Context="productcontext" TItem="CostCentreDto"
                       Field="IsDisabled"
                       Caption="@L["IsDisabled"]">
-                    <DisplayTemplate Context="idContext">
-                        @if (idContext.IsDisabled)
+                    <DisplayTemplate>
+                                                    @if (productcontext.IsDisabled)
                         {
                             <Icon TextColor="TextColor.Success" Name="@IconName.Check" />
                         }
@@ -221,68 +218,6 @@
                     </DisplayTemplate>
               </DataGridColumn>
 
-
-                                    </DataGridColumns>
-                                </DataGrid>
-                            }
-                        </TabPanel>
-                        <TabPanel Name="product-tab" Class="mt-0">
-                            @if (CanCreateProduct)
-                            {
-                                <Row Class="mb-2">
-                                    <Column Class="d-flex justify-content-end">
-                                        <Button Color="Color.Primary" Clicked="async () => await OpenCreateProductModalAsync(context.Id)">
-                                            <i class="fas fa-plus me-1"></i>@L["NewProduct"]
-                                        </Button>
-                                    </Column>
-                                </Row>
-                            }
-
-                            @{
-                                var products = (context as BranchDto).Products;
-
-                                <DataGrid @ref="@ProductDataGrids[context.Id]"
-                                          TItem="ProductDto"
-                                          Data="products"
-                                          ReadData="@((args) => OnProductDataGridReadAsync(args, context.Id))"
-                                          Sortable="true"
-                                          ShowCaptions="true"
-                                          ShowPager="true"
-                                          Responsive="true"
-                                          PageSize="ProductPageSize">
-
-                                    <DataGridColumns>
-
-                                        <DataGridEntityActionsColumn TItem="ProductDto" @ref="@ProductEntityActionsColumns">
-                                            <DisplayTemplate Context="product_context">
-                                                <EntityActions TItem="ProductDto" EntityActionsColumn="@ProductEntityActionsColumns">
-                                                    <EntityAction TItem="ProductDto"
-                                                                  Visible="@CanEditProduct"
-                                                                  Clicked="async () => await OpenEditProductModalAsync(product_context)"
-                                                                  Text="@L["Edit"]">
-                                                    </EntityAction>
-                                                    <EntityAction TItem="ProductDto"
-                                                                  Visible="@CanDeleteProduct"
-                                                                  Clicked="async () => await DeleteProductAsync(product_context)"
-                                                                  ConfirmationMessage="@(() => L["DeleteConfirmationMessage"])"
-                                                                  Text="@L["Delete"]">
-                                                    </EntityAction>
-                                                </EntityActions>
-                                            </DisplayTemplate>
-                                        </DataGridEntityActionsColumn>
-
-                                        <DataGridCommandColumn/>
-
-                                        
-              <DataGridColumn TItem="ProductDto"
-                      Field="ProductName"
-                      Caption="@L["ProductName"]">
-              </DataGridColumn>
-
-              <DataGridColumn TItem="ProductDto"
-                      Field="ProductCode"
-                      Caption="@L["ProductCode"]">
-              </DataGridColumn>
 
                                     </DataGridColumns>
                                 </DataGrid>
@@ -501,111 +436,6 @@
                     @L["Cancel"]
                 </Button>
                 <SubmitButton Form="EditCostCentreForm" Clicked="UpdateCostCentreAsync" />
-            </ModalFooter>
-        </Form>
-    </ModalContent>
-</Modal>
-@* ************************* Product: CREATE MODAL ************************* *@
-<Modal @ref="CreateProductModal" Closing="@CreateProductModal.CancelClosingModalWhenFocusLost">
-    <ModalContent Centered="true">
-        <Form id="CreateProductForm">
-            <ModalHeader>
-                <ModalTitle>@L["NewProduct"]</ModalTitle>
-                <CloseButton Clicked="CloseCreateProductModalAsync" />
-            </ModalHeader>
-            <ModalBody>
-                <Validations @ref="@NewProductValidations"
-                             Mode="ValidationMode.Auto"
-                             Model="@NewProduct"
-                             ValidateOnLoad="false">
-                     
-                    
-                    <Validation>
-                        <Field>
-                            <FieldLabel>@L["ProductName"]</FieldLabel>
-                            <TextEdit @bind-Text="@NewProduct.ProductName"  >
-                                <Feedback>
-                                    <ValidationError />
-                                </Feedback>
-                            </TextEdit>
-                        </Field>
-                    </Validation>
-
-
-                    <Validation>
-                        <Field>
-                            <FieldLabel>@L["ProductCode"]</FieldLabel>
-                            <TextEdit @bind-Text="@NewProduct.ProductCode"  >
-                                <Feedback>
-                                    <ValidationError />
-                                </Feedback>
-                            </TextEdit>
-                        </Field>
-                    </Validation>
-
-
-                    
-                </Validations>
-            </ModalBody>
-            <ModalFooter>
-                <Button Color="Color.Secondary"
-                        Clicked="CloseCreateProductModalAsync">
-                    @L["Cancel"]
-                </Button>
-                <SubmitButton Form="CreateProductForm" Clicked="CreateProductAsync" />
-            </ModalFooter>
-        </Form>
-    </ModalContent>
-</Modal>
-
-@* ************************* Product: EDIT MODAL ************************* *@
-<Modal @ref="EditProductModal" Closing="@EditProductModal.CancelClosingModalWhenFocusLost">
-    <ModalContent Centered="true">
-        <Form id="EditProductForm">
-            <ModalHeader>
-                <ModalTitle>@L["Update"]</ModalTitle>
-                <CloseButton Clicked="CloseEditProductModalAsync" />
-            </ModalHeader>
-            <ModalBody>
-                <Validations @ref="@EditingProductValidations"
-                             Mode="ValidationMode.Auto"
-                             Model="@EditingProduct"
-                             ValidateOnLoad="false">
-                     
-                    
-                    <Validation>
-                        <Field>
-                            <FieldLabel>@L["ProductName"]</FieldLabel>
-                            <TextEdit @bind-Text="@EditingProduct.ProductName"  >
-                                <Feedback>
-                                    <ValidationError />
-                                </Feedback>
-                            </TextEdit>
-                        </Field>
-                    </Validation>
-
-
-                    <Validation>
-                        <Field>
-                            <FieldLabel>@L["ProductCode"]</FieldLabel>
-                            <TextEdit @bind-Text="@EditingProduct.ProductCode"  >
-                                <Feedback>
-                                    <ValidationError />
-                                </Feedback>
-                            </TextEdit>
-                        </Field>
-                    </Validation>
-
-
-                    
-                </Validations>
-            </ModalBody>
-            <ModalFooter>
-                <Button Color="Color.Secondary"
-                        Clicked="CloseEditProductModalAsync">
-                    @L["Cancel"]
-                </Button>
-                <SubmitButton Form="EditProductForm" Clicked="UpdateProductAsync" />
             </ModalFooter>
         </Form>
     </ModalContent>

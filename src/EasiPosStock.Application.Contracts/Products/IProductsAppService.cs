@@ -8,7 +8,6 @@ namespace EasiPosStock.Products
 {
     public partial interface IProductsAppService : IApplicationService
     {
-        Task<PagedResultDto<ProductDto>> GetListByBranchIdAsync(GetProductListInput input);
 
         Task<PagedResultDto<ProductDto>> GetListAsync(GetProductsInput input);
 

@@ -24,13 +24,6 @@ namespace EasiPosStock.Controllers.Products
         }
 
         [HttpGet]
-        [Route("by-branch")]
-        public virtual Task<PagedResultDto<ProductDto>> GetListByBranchIdAsync(GetProductListInput input)
-        {
-            return _productsAppService.GetListByBranchIdAsync(input);
-        }
-
-        [HttpGet]
         public virtual Task<PagedResultDto<ProductDto>> GetListAsync(GetProductsInput input)
         {
             return _productsAppService.GetListAsync(input);

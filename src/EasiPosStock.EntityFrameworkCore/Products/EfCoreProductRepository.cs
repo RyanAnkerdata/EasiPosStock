@@ -19,23 +19,6 @@ namespace EasiPosStock.Products
 
         }
 
-        public virtual async Task<List<Product>> GetListByBranchIdAsync(
-           Guid branchId,
-           string? sorting = null,
-           int maxResultCount = int.MaxValue,
-           int skipCount = 0,
-           CancellationToken cancellationToken = default)
-        {
-            var query = (await GetQueryableAsync()).Where(x => x.BranchId == branchId);
-            query = query.OrderBy(string.IsNullOrWhiteSpace(sorting) ? ProductConsts.GetDefaultSorting(false) : sorting);
-            return await query.PageBy(skipCount, maxResultCount).ToListAsync(cancellationToken);
-        }
-
-        public virtual async Task<long> GetCountByBranchIdAsync(Guid branchId, CancellationToken cancellationToken = default)
-        {
-            return await (await GetQueryableAsync()).Where(x => x.BranchId == branchId).CountAsync(cancellationToken);
-        }
-
         public virtual async Task<List<Product>> GetListAsync(
             string? filterText = null,
             string? productName = null,

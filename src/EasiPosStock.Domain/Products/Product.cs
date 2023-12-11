@@ -13,8 +13,6 @@ namespace EasiPosStock.Products
 {
     public abstract class ProductBase : Entity<Guid>, IMultiTenant
     {
-        public virtual Guid BranchId { get; set; }
-
         public virtual Guid? TenantId { get; set; }
 
         [CanBeNull]
@@ -28,11 +26,10 @@ namespace EasiPosStock.Products
 
         }
 
-        public ProductBase(Guid id, Guid branchId, string? productName = null, string? productCode = null)
+        public ProductBase(Guid id, string? productName = null, string? productCode = null)
         {
 
             Id = id;
-            BranchId = branchId;
             ProductName = productName;
             ProductCode = productCode;
         }

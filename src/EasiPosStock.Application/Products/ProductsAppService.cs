@@ -29,21 +29,6 @@ namespace EasiPosStock.Products
             _productManager = productManager;
         }
 
-        public virtual async Task<PagedResultDto<ProductDto>> GetListByBranchIdAsync(GetProductListInput input)
-        {
-            var products = await _productRepository.GetListByBranchIdAsync(
-                input.BranchId,
-                input.Sorting,
-                input.MaxResultCount,
-                input.SkipCount);
-
-            return new PagedResultDto<ProductDto>
-            {
-                TotalCount = await _productRepository.GetCountByBranchIdAsync(input.BranchId),
-                Items = ObjectMapper.Map<List<Product>, List<ProductDto>>(products)
-            };
-        }
-
         public virtual async Task<PagedResultDto<ProductDto>> GetListAsync(GetProductsInput input)
         {
             var totalCount = await _productRepository.GetCountAsync(input.FilterText, input.ProductName, input.ProductCode);
@@ -71,7 +56,7 @@ namespace EasiPosStock.Products
         public virtual async Task<ProductDto> CreateAsync(ProductCreateDto input)
         {
 
-            var product = await _productManager.CreateAsync(input.BranchId,
+            var product = await _productManager.CreateAsync(
             input.ProductName, input.ProductCode
             );
 
@@ -83,7 +68,7 @@ namespace EasiPosStock.Products
         {
 
             var product = await _productManager.UpdateAsync(
-            id, input.BranchId,
+            id,
             input.ProductName, input.ProductCode
             );
 

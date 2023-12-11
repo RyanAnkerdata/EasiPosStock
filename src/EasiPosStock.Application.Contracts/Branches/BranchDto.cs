@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using EasiPosStock.CostCentres;
-using EasiPosStock.Products;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
 
@@ -14,6 +13,5 @@ namespace EasiPosStock.Branches
         public string ConcurrencyStamp { get; set; } = null!;
 
         public List<CostCentreDto> CostCentres { get; set; } = new();
-        public List<ProductDto> Products { get; set; } = new();
     }
 }

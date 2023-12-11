@@ -19,12 +19,12 @@ namespace EasiPosStock.Products
         }
 
         public virtual async Task<Product> CreateAsync(
-        Guid branchId, string? productName = null, string? productCode = null)
+        string? productName = null, string? productCode = null)
         {
 
             var product = new Product(
              GuidGenerator.Create(),
-             branchId, productName, productCode
+             productName, productCode
              );
 
             return await _productRepository.InsertAsync(product);
@@ -32,13 +32,12 @@ namespace EasiPosStock.Products
 
         public virtual async Task<Product> UpdateAsync(
             Guid id,
-            Guid branchId, string? productName = null, string? productCode = null
+            string? productName = null, string? productCode = null
         )
         {
 
             var product = await _productRepository.GetAsync(id);
 
-            product.BranchId = branchId;
             product.ProductName = productName;
             product.ProductCode = productCode;
 

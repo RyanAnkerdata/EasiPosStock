@@ -118,7 +118,6 @@ public class EasiPosStockDbContext :
         b.Property(x => x.TenantId).HasColumnName(nameof(Branch.TenantId));
         b.Property(x => x.BranchName).HasColumnName(nameof(Branch.BranchName)).IsRequired();
         b.HasMany(x => x.CostCentres).WithOne().HasForeignKey(x => x.BranchId).IsRequired().OnDelete(DeleteBehavior.NoAction);
-        b.HasMany(x => x.Products).WithOne().HasForeignKey(x => x.BranchId).IsRequired().OnDelete(DeleteBehavior.NoAction);
     });
         builder.Entity<Product>(b =>
     {
@@ -127,7 +126,6 @@ public class EasiPosStockDbContext :
         b.Property(x => x.TenantId).HasColumnName(nameof(Product.TenantId));
         b.Property(x => x.ProductName).HasColumnName(nameof(Product.ProductName));
         b.Property(x => x.ProductCode).HasColumnName(nameof(Product.ProductCode));
-        b.HasOne<Branch>().WithMany(x => x.Products).HasForeignKey(x => x.BranchId).IsRequired().OnDelete(DeleteBehavior.NoAction);
     });
     }
 }

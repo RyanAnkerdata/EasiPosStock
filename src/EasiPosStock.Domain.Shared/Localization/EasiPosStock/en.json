@@ -64,6 +64,7 @@
     "ProductName": "Product Name",
     "ProductCode": "Product Code",
     "Products": "Products",
-    "NewProduct": "New Product"
+    "NewProduct": "New Product",
+    "Menu:Products": "Products"
   }
 }

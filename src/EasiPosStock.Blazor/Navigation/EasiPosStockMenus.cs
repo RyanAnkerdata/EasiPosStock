@@ -10,4 +10,6 @@ public class EasiPosStockMenus
     public const string TenantDashboard = Prefix + ".TenantDashboard";
     public const string Branches = Prefix + ".Branches";
 
+    public const string Products = Prefix + ".Products";
+
 }

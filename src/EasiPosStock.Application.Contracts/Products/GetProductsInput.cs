@@ -5,7 +5,6 @@ namespace EasiPosStock.Products
 {
     public abstract class GetProductsInputBase : PagedAndSortedResultRequestDto
     {
-        public Guid? BranchId { get; set; }
 
         public string? FilterText { get; set; }
 
